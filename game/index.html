@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starshard Warden — defend the last light</title>
+<style>
+  :root {
+    --ink: #dfe9ff;
+    --dim: #8fa3cc;
+    --cyan: #5df2ff;
+    --gold: #ffd75d;
+    --rose: #ff5470;
+    --panel: rgba(9, 12, 26, 0.86);
+    --line: rgba(120, 170, 255, 0.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #04050c; color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+  body { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  #stage { position: relative; width: min(1280px, 100vw); aspect-ratio: 1280 / 800; }
+  canvas { width: 100%; height: 100%; display: block; background: #070912;
+    box-shadow: 0 0 60px rgba(64, 110, 255, 0.25); }
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    background: radial-gradient(ellipse at center, rgba(7, 9, 18, 0.25), rgba(7, 9, 18, 0.78));
+    padding: 24px; }
+  .hidden { display: none !important; }
+  h1 { font-size: 64px; letter-spacing: 6px; margin: 0 0 6px; color: #fff;
+    text-shadow: 0 0 26px rgba(93, 242, 255, 0.85), 0 0 70px rgba(93, 242, 255, 0.4); }
+  h1 .gold { color: var(--gold); text-shadow: 0 0 26px rgba(255, 215, 93, 0.8); }
+  .tagline { color: var(--ink); font-size: 19px; margin: 0 0 18px; }
+  .story { color: var(--dim); max-width: 620px; font-size: 15px; line-height: 1.55; margin: 0 0 22px; }
+  .controls { display: flex; gap: 10px 26px; flex-wrap: wrap; justify-content: center;
+    color: var(--dim); font-size: 14px; margin-bottom: 26px; }
+  .controls b { color: var(--ink); font-weight: 600; }
+  button.cta { font: inherit; font-size: 19px; font-weight: 700; letter-spacing: 2px;
+    color: #06121a; background: linear-gradient(180deg, #8ff7ff, #37c8e8);
+    border: 0; border-radius: 10px; padding: 13px 42px; cursor: pointer;
+    box-shadow: 0 0 24px rgba(93, 242, 255, 0.55); }
+  button.cta:hover { filter: brightness(1.1); }
+  .hint { margin-top: 14px; color: var(--dim); font-size: 13px; }
+  h2 { font-size: 40px; letter-spacing: 4px; margin: 0 0 8px; }
+  h2.rose { color: var(--rose); text-shadow: 0 0 24px rgba(255, 84, 112, 0.7); }
+  h2.gold { color: var(--gold); text-shadow: 0 0 24px rgba(255, 215, 93, 0.7); }
+  .final { font-size: 21px; margin: 4px 0 20px; }
+  .final b { color: var(--gold); }
+  #upgrade-cards { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+  .card { width: 240px; text-align: left; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px; cursor: pointer; color: var(--ink); font: inherit; }
+  .card:hover { border-color: var(--cyan); box-shadow: 0 0 18px rgba(93, 242, 255, 0.35); }
+  .card .key { display: inline-block; border: 1px solid var(--line); border-radius: 5px;
+    padding: 0 7px; color: var(--cyan); font-weight: 700; margin-bottom: 8px; }
+  .card h3 { margin: 0 0 6px; font-size: 19px; }
+  .card p { margin: 0; color: var(--dim); font-size: 14px; line-height: 1.45; }
+  #pause-badge { position: absolute; top: 14px; right: 14px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 13px; color: var(--dim); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="game" width="1280" height="800"></canvas>
+
+  <div id="screen-title" class="screen">
+    <h1>STARSHARD <span class="gold">WARDEN</span></h1>
+    <p class="tagline">Defend the last light. Ten waves. One core. No mercy.</p>
+    <p class="story">The Hollow Star is eating the dark, and everything it swallows comes back
+      wrong. You are the Warden of the final Star Core: hold the field for ten waves,
+      harvest starshards from the fallen, grow stronger between breaths — and when the
+      Hollow Star itself arrives on wave ten, put it down.</p>
+    <div class="controls">
+      <span><b>WASD / Arrows</b> move</span>
+      <span><b>Mouse</b> aim</span>
+      <span><b>Click / J</b> fire</span>
+      <span><b>Space / Shift</b> dash</span>
+      <span><b>P</b> pause</span>
+      <span><b>M</b> mute</span>
+    </div>
+    <button id="btn-start" class="cta" type="button">TAKE THE WATCH</button>
+    <p class="hint">Lose if the Warden falls — or if the Core goes dark. Win by surviving wave 10.</p>
+  </div>
+
+  <div id="screen-upgrade" class="screen hidden">
+    <h2 class="gold">THE CORE PROVIDES</h2>
+    <p class="tagline">Choose one blessing to carry into the next wave.</p>
+    <div id="upgrade-cards"></div>
+    <p class="hint">Click a card, or press 1, 2 or 3.</p>
+  </div>
+
+  <div id="screen-over" class="screen hidden">
+    <h2 class="rose">THE LIGHT GOES OUT</h2>
+    <p class="final" id="over-stats">Score 0</p>
+    <button id="btn-retry" class="cta" type="button">STAND AGAIN</button>
+    <p class="hint">Press R to return to the watch.</p>
+  </div>
+
+  <div id="screen-victory" class="screen hidden">
+    <h2 class="gold">THE STAR HOLDS</h2>
+    <p class="final" id="victory-stats">Score 0</p>
+    <button id="btn-again" class="cta" type="button">WARDEN AGAIN</button>
+    <p class="hint">Press R to play again. The dark is patient — so are you.</p>
+  </div>
+
+  <div id="pause-badge" class="hidden">PAUSED — press P to resume</div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
