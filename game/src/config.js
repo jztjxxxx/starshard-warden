@@ -79,3 +79,43 @@ export const SCORE = {
   waveClear: 250,
   victory: 2000,
 };
+
+// The three watches. A difficulty scales how tough and how numerous the
+// Hollow are, and what a run pays out: an easier dark is safer and poorer,
+// the Hollow watch is richer because it is likelier to end you. Records are
+// kept per difficulty (see records.js), so scores never compare across them.
+export const DIFFICULTIES = {
+  patrol: {
+    id: 'patrol',
+    name: 'PATROL',
+    blurb: 'A gentler dark. Learn the watch.',
+    enemyHp: 0.8,
+    enemySpeed: 0.92,
+    budget: 0.8,
+    score: 0.8,
+  },
+  warden: {
+    id: 'warden',
+    name: 'WARDEN',
+    blurb: 'The watch as it was meant to be stood.',
+    enemyHp: 1,
+    enemySpeed: 1,
+    budget: 1,
+    score: 1,
+  },
+  hollow: {
+    id: 'hollow',
+    name: 'HOLLOW',
+    blurb: 'The dark pushes back. Riches for the bold.',
+    enemyHp: 1.3,
+    enemySpeed: 1.08,
+    budget: 1.25,
+    score: 1.5,
+  },
+};
+
+export const DEFAULT_DIFFICULTY = 'warden';
+
+export function difficultyById(id) {
+  return DIFFICULTIES[id] || DIFFICULTIES[DEFAULT_DIFFICULTY];
+}

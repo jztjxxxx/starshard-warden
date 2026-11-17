@@ -308,6 +308,7 @@ function drawHud(ctx, state) {
   ctx.font = '12px "Segoe UI", system-ui, sans-serif';
   ctx.fillStyle = COLORS.textDim;
   ctx.fillText('SCORE', VIEW.width - 18, 52);
+  if (state.difficultyName) ctx.fillText(state.difficultyName, VIEW.width - 18, 70);
 
   const boss = state.enemies.find((enemy) => enemy.kind === 'boss');
   if (boss) {

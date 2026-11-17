@@ -6,11 +6,11 @@ import { ENEMY_TYPES, VIEW, WAVES } from './config.js';
 
 const EDGE_MARGIN = 36;
 
-export function buildWaveQueue(wave, random) {
+export function buildWaveQueue(wave, random, budgetScale = 1) {
   if (wave === WAVES.bossWave) {
     return ['boss', 'chaser', 'chaser', 'diver', 'chaser', 'diver', 'splitter', 'chaser', 'chaser', 'diver'];
   }
-  const budget = WAVES.baseBudget + wave * WAVES.budgetPerWave;
+  const budget = Math.max(3, Math.round((WAVES.baseBudget + wave * WAVES.budgetPerWave) * budgetScale));
   const queue = [];
   const table = [
     { kind: 'chaser', from: 1, weight: 10 },

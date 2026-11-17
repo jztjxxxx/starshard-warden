@@ -32,8 +32,17 @@
   .tagline { color: var(--ink); font-size: 19px; margin: 0 0 18px; }
   .story { color: var(--dim); max-width: 620px; font-size: 15px; line-height: 1.55; margin: 0 0 22px; }
   .controls { display: flex; gap: 10px 26px; flex-wrap: wrap; justify-content: center;
-    color: var(--dim); font-size: 14px; margin-bottom: 26px; }
+    color: var(--dim); font-size: 14px; margin-bottom: 18px; }
   .controls b { color: var(--ink); font-weight: 600; }
+  .difficulty { display: flex; gap: 10px; justify-content: center; margin-bottom: 8px; }
+  .diff-btn { font: inherit; font-size: 14px; font-weight: 700; letter-spacing: 2px;
+    color: var(--dim); background: rgba(9, 12, 26, 0.6); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 20px; cursor: pointer; }
+  .diff-btn:hover { color: var(--ink); border-color: var(--cyan); }
+  .diff-btn.selected { color: #2a1e04; background: linear-gradient(180deg, #ffe9a3, #ffd75d);
+    border-color: var(--gold); box-shadow: 0 0 16px rgba(255, 215, 93, 0.45); }
+  .diff-blurb { color: var(--dim); font-size: 13.5px; margin: 0 0 20px; min-height: 18px; }
+  .best { color: var(--gold); font-size: 14px; margin: 14px 0 0; min-height: 18px; }
   button.cta { font: inherit; font-size: 19px; font-weight: 700; letter-spacing: 2px;
     color: #06121a; background: linear-gradient(180deg, #8ff7ff, #37c8e8);
     border: 0; border-radius: 10px; padding: 13px 42px; cursor: pointer;
@@ -76,8 +85,15 @@
       <span><b>P</b> pause</span>
       <span><b>M</b> mute</span>
     </div>
+    <div class="difficulty" role="group" aria-label="Difficulty">
+      <button type="button" class="diff-btn" data-difficulty="patrol">PATROL</button>
+      <button type="button" class="diff-btn" data-difficulty="warden">WARDEN</button>
+      <button type="button" class="diff-btn" data-difficulty="hollow">HOLLOW</button>
+    </div>
+    <p class="diff-blurb" id="diff-blurb"></p>
     <button id="btn-start" class="cta" type="button">TAKE THE WATCH</button>
-    <p class="hint">Lose if the Warden falls — or if the Core goes dark. Win by surviving wave 10.</p>
+    <p class="best" id="best-line"></p>
+    <p class="hint">Lose if the Warden falls — or if the Core goes dark. Win by surviving wave 10. Keys 1 / 2 / 3 switch difficulty.</p>
   </div>
 
   <div id="screen-upgrade" class="screen hidden">

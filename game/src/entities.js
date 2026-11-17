@@ -43,7 +43,7 @@ export function createCore(x, y) {
   };
 }
 
-export function createEnemy(kind, x, y, hpScale) {
+export function createEnemy(kind, x, y, hpScale, speedScale = 1) {
   const spec = ENEMY_TYPES[kind];
   return {
     kind,
@@ -54,7 +54,7 @@ export function createEnemy(kind, x, y, hpScale) {
     radius: spec.radius,
     hp: Math.round(spec.hp * hpScale),
     maxHp: Math.round(spec.hp * hpScale),
-    speed: spec.speed,
+    speed: spec.speed * speedScale,
     damage: spec.damage,
     coreDamage: spec.coreDamage,
     score: spec.score,

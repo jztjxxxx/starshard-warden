@@ -3,9 +3,10 @@
 // victory screens. With ?shot=<scene>&seed=<n> it instead stages one
 // deterministic scene from shots.js and holds it for the screenshot.
 
-import { STEP } from './config.js';
+import { DEFAULT_DIFFICULTY, DIFFICULTIES, STEP, difficultyById } from './config.js';
 import { createAudio } from './audio.js';
 import { createInput } from './input.js';
+import { loadRecords, recordFor, recordRun } from './records.js';
 import { createRenderer } from './render.js';
 import { autopilotControls, stageShot } from './shots.js';
 import { draftUpgrades } from './upgrades.js';
@@ -24,12 +25,16 @@ const screens = {
 };
 const pauseBadge = document.getElementById('pause-badge');
 const cardsBox = document.getElementById('upgrade-cards');
+const diffButtons = [...document.querySelectorAll('.diff-btn')];
+const diffBlurb = document.getElementById('diff-blurb');
+const bestLine = document.getElementById('best-line');
 
 const params = new URLSearchParams(window.location.search);
 const shotName = params.get('shot');
 const shotSeed = Number(params.get('seed') || '1') >>> 0;
 
 let world = createWorld(20261115);
+let difficultyId = DEFAULT_DIFFICULTY;
 let mode = 'title';
 let paused = false;
 let currentDraft = [];
@@ -41,6 +46,29 @@ function showOnly(name) {
   for (const [key, element] of Object.entries(screens)) {
     element.classList.toggle('hidden', key !== name);
   }
+}
+
+function refreshDifficultyUi() {
+  const difficulty = difficultyById(difficultyId);
+  for (const button of diffButtons) {
+    button.classList.toggle('selected', button.dataset.difficulty === difficulty.id);
+  }
+  diffBlurb.textContent = difficulty.blurb;
+  const record = recordFor(loadRecords(), difficulty.id);
+  bestLine.textContent = record.runs > 0
+    ? `Best on ${difficulty.name}: ${record.bestScore.toLocaleString('en-US')} · wave ${record.bestWave} · ` +
+      `${record.wins} ${record.wins === 1 ? 'victory' : 'victories'} in ${record.runs} ${record.runs === 1 ? 'watch' : 'watches'}`
+    : `No watch stood on ${difficulty.name} yet — your best will be remembered here.`;
+}
+
+function selectDifficulty(id) {
+  if (!DIFFICULTIES[id]) return;
+  difficultyId = id;
+  refreshDifficultyUi();
+}
+
+for (const button of diffButtons) {
+  button.addEventListener('click', () => selectDifficulty(button.dataset.difficulty));
 }
 
 function statsLine() {
@@ -82,7 +110,7 @@ function chooseUpgrade(index) {
 }
 
 function startRun() {
-  world = createWorld((Date.now() & 0xffffffff) >>> 0);
+  world = createWorld((Date.now() & 0xffffffff) >>> 0, difficultyId);
   mode = 'playing';
   paused = false;
   endSoundPlayed = false;
@@ -93,7 +121,16 @@ function startRun() {
 
 function finishRun(won) {
   mode = won ? 'victory' : 'over';
-  document.getElementById(won ? 'victory-stats' : 'over-stats').innerHTML = statsLine();
+  const { record, isBestScore } = recordRun(world.state.difficulty.id, {
+    score: world.state.score,
+    wave: Math.max(1, world.state.wave),
+    won,
+  });
+  const recordNote = isBestScore
+    ? ` · <b>NEW BEST</b> on ${world.state.difficultyName}`
+    : ` · best on ${world.state.difficultyName}: <b>${record.bestScore.toLocaleString('en-US')}</b>`;
+  document.getElementById(won ? 'victory-stats' : 'over-stats').innerHTML = statsLine() + recordNote;
+  refreshDifficultyUi();
   showOnly(won ? 'victory' : 'over');
   if (!endSoundPlayed) {
     endSoundPlayed = true;
@@ -150,8 +187,13 @@ window.addEventListener('keydown', (event) => {
     pauseBadge.classList.toggle('hidden', !paused);
   }
   if (event.key === 'm' || event.key === 'M') audio.toggleMute();
+  if (mode === 'title' && ['1', '2', '3'].includes(event.key)) {
+    selectDifficulty(['patrol', 'warden', 'hollow'][Number(event.key) - 1]);
+  }
   if (mode === 'upgrade' && ['1', '2', '3'].includes(event.key)) chooseUpgrade(Number(event.key) - 1);
 });
+
+refreshDifficultyUi();
 
 if (shotName !== null) {
   const staged = stageShot(shotName, shotSeed, STEP);

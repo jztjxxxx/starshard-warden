@@ -3,7 +3,7 @@
 // combat, pickups and win/lose conditions. Sound and screens live outside: the
 // world appends cue names to state.events and the shell plays and shows them.
 
-import { CORE, LEVELS, PLAYER, SCORE, SHARD, VIEW, WAVES } from './config.js';
+import { CORE, DEFAULT_DIFFICULTY, LEVELS, PLAYER, SCORE, SHARD, VIEW, WAVES, difficultyById } from './config.js';
 import {
   createBullet,
   createCore,
@@ -28,10 +28,13 @@ function angleTo(a, b) {
   return Math.atan2(b.y - a.y, b.x - a.x);
 }
 
-export function createWorld(seed) {
+export function createWorld(seed, difficultyId = DEFAULT_DIFFICULTY) {
   const random = createRandom(seed);
+  const difficulty = difficultyById(difficultyId);
   const state = {
     time: 0,
+    difficulty,
+    difficultyName: difficulty.name,
     player: createPlayer(VIEW.width / 2, VIEW.height - 190),
     core: createCore(VIEW.width / 2, VIEW.height / 2),
     enemies: [],
@@ -59,9 +62,14 @@ export function createWorld(seed) {
     for (let i = 0; i < count; i += 1) state.particles.push(createParticle(x, y, color, random, big));
   }
 
+  // Every point a run earns passes through the difficulty's payout rate.
+  function award(points) {
+    return Math.round(points * difficulty.score);
+  }
+
   function startWave(wave) {
     state.wave = wave;
-    state.spawnQueue = buildWaveQueue(wave, random);
+    state.spawnQueue = buildWaveQueue(wave, random, difficulty.budget);
     state.spawnTimer = 0.4;
     state.phase = 'combat';
     state.banner = `WAVE ${wave} — ${describeWave(wave)}`;
@@ -102,20 +110,21 @@ export function createWorld(seed) {
 
   function killEnemy(enemy) {
     state.kills += 1;
-    state.score += enemy.score;
+    const gained = award(enemy.score);
+    state.score += gained;
     state.events.push(enemy.kind === 'boss' || enemy.kind === 'tank' ? 'explosion-big' : 'explosion');
     burst(enemy.x, enemy.y, enemy.color, enemy.kind === 'boss' ? 70 : 16, enemy.kind === 'boss' || enemy.kind === 'tank');
-    state.texts.push(createText(enemy.x, enemy.y - enemy.radius, `+${enemy.score}`, '#dfe9ff'));
+    state.texts.push(createText(enemy.x, enemy.y - enemy.radius, `+${gained}`, '#dfe9ff'));
     for (let i = 0; i < enemy.shardCount; i += 1) state.shards.push(createShard(enemy.x, enemy.y, random));
     if (enemy.kind === 'splitter') {
       for (let i = 0; i < 3; i += 1) {
-        const mini = createEnemy('mini', enemy.x + random.range(-14, 14), enemy.y + random.range(-14, 14), hpScaleFor(state.wave));
+        const mini = createEnemy('mini', enemy.x + random.range(-14, 14), enemy.y + random.range(-14, 14), hpScaleFor(state.wave) * difficulty.enemyHp, difficulty.enemySpeed);
         state.enemies.push(mini);
       }
     }
     if (enemy.kind === 'boss') {
       state.won = true;
-      state.score += SCORE.victory;
+      state.score += award(SCORE.victory);
       state.events.push(EVENT_VICTORY);
     }
   }
@@ -286,7 +295,7 @@ export function createWorld(seed) {
         if (d < PLAYER.pickupRadius + shard.radius) {
           shard.age = SHARD.lifeTime;
           player.xp += shard.value;
-          state.score += SCORE.shardPickup;
+          state.score += award(SCORE.shardPickup);
           state.events.push('pickup');
           while (player.xp >= player.xpNext) {
             player.xp -= player.xpNext;
@@ -339,10 +348,10 @@ export function createWorld(seed) {
           state.spawnTimer = spawnIntervalFor(state.wave);
           const kind = state.spawnQueue.shift();
           const point = spawnPoint(random);
-          state.enemies.push(createEnemy(kind, point.x, point.y, hpScaleFor(state.wave)));
+          state.enemies.push(createEnemy(kind, point.x, point.y, hpScaleFor(state.wave) * difficulty.enemyHp, difficulty.enemySpeed));
         }
       } else if (state.enemies.length === 0 && !state.won) {
-        state.score += SCORE.waveClear;
+        state.score += award(SCORE.waveClear);
         state.events.push('waveclear');
         state.banner = `WAVE ${state.wave} CLEAR`;
         state.bannerTimer = 2;

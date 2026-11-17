@@ -15,7 +15,7 @@ node serve.ts
 # then open http://localhost:8080/game/ in a desktop browser
 ```
 
-Any static file server pointed at the `game/` folder works just as well. Move with WASD or the arrow keys, aim with the mouse, hold click (or J) to fire, dash with Space or Shift, pause with P, mute with M.
+Any static file server pointed at the `game/` folder works just as well. Move with WASD or the arrow keys, aim with the mouse, hold click (or J) to fire, dash with Space or Shift, pause with P, mute with M. Three difficulties — Patrol, Warden, Hollow — scale the swarm's toughness, numbers and score payout, and the game remembers your best score, best wave and victories per difficulty in the browser's local storage; each visit still starts a fresh run.
 
 To hand the entry in the way the grader does:
 
